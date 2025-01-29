@@ -12,7 +12,6 @@ import {
   DIRECTION_BOTTOM,
 } from "./direction/direction.js";
 
-// Константы
 const directions = {
   DIRECTION_RIGHT,
   DIRECTION_UP,
@@ -27,7 +26,7 @@ const ghostImageLocations = [
   { x: 0, y: 121 },
   { x: 178, y: 121 },
 ];
-// Реактивные переменные
+
 const canva = ref(null);
 const canvasContext = ref(null);
 const pacmanFrames = ref(null);

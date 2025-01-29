@@ -52,16 +52,11 @@ export function drawMap(
         }
       }
     }
-    canvasContext.value.shadowBlur = 0; // Сброс тени
+    canvasContext.value.shadowBlur = 0;
   };
-  const updateGhosts = () => {
-    for (let i = 0; i < ghosts.length; i++) {
-      ghosts[i].moveProcess();
-    }
-  };
+
   const drawWallSegments = (i, j) => {
     if (j > 0 && map[i][j - 1] === 1) {
-      // Левая стена
       createRoundedRect(
         j * oneBlockSize,
         i * oneBlockSize + wallOffset,
@@ -72,7 +67,6 @@ export function drawMap(
       );
     }
     if (j < map[0].length - 1 && map[i][j + 1] === 1) {
-      // Правая стена
       createRoundedRect(
         j * oneBlockSize + wallOffset,
         i * oneBlockSize + wallOffset,
@@ -83,7 +77,6 @@ export function drawMap(
       );
     }
     if (i > 0 && map[i - 1][j] === 1) {
-      // Верхняя стена
       createRoundedRect(
         j * oneBlockSize + wallOffset,
         i * oneBlockSize,
@@ -94,7 +87,6 @@ export function drawMap(
       );
     }
     if (i < map.length - 1 && map[i + 1][j] === 1) {
-      // Нижняя стена
       createRoundedRect(
         j * oneBlockSize + wallOffset,
         i * oneBlockSize + wallOffset,
@@ -112,7 +104,6 @@ export function drawMap(
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[0].length; j++) {
         if (map[i][j] === 1) {
-          // Основная стена
           createRoundedRect(
             j * oneBlockSize,
             i * oneBlockSize,
@@ -121,11 +112,11 @@ export function drawMap(
             5,
             "#D74650"
           );
-          drawWallSegments(i, j); // Сегменты соединений
+          drawWallSegments(i, j);
         }
       }
     }
-    canvasContext.value.shadowBlur = 0; // Сброс тени
+    canvasContext.value.shadowBlur = 0;
   };
 
   const draw = () => {

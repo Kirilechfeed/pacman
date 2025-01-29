@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import { randomTargetsForGhosts } from "./randomTargetsForGhosts";
+import { move } from "./move";
 
 export function createGhost(
   x,
@@ -90,28 +91,16 @@ export function createGhost(
       }
     }
 
-    move(modifier) {
-      switch (this.direction) {
-        case direction.DIRECTION_RIGHT:
-          this.x += this.speed * modifier;
-          break;
-        case direction.DIRECTION_UP:
-          this.y -= this.speed * modifier;
-          break;
-        case direction.DIRECTION_LEFT:
-          this.x -= this.speed * modifier;
-          break;
-        case direction.DIRECTION_BOTTOM:
-          this.y += this.speed * modifier;
-          break;
-      }
-    }
     moveForwards() {
-      this.move(1);
+      const { x, y } = move(1, this.direction, this.x, this.y, this.speed);
+      this.x = x;
+      this.y = y;
     }
 
     moveBackwards() {
-      this.move(-1);
+      const { x, y } = move(-1, this.direction, this.x, this.y, this.speed);
+      this.x = x;
+      this.y = y;
     }
 
     checkCollisions() {
