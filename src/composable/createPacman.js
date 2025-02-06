@@ -1,3 +1,4 @@
+import { reactive, computed, watchEffect } from "vue";
 import { move } from "./move";
 
 export function createPacman(
@@ -12,126 +13,135 @@ export function createPacman(
   canvasContext,
   pacmanFrames
 ) {
-  class Pacman {
-    constructor(x, y, width, height, speed) {
-      Object.assign(this, { x, y, width, height, speed });
-      this.direction = 4;
-      this.nextDirection = 4;
-      this.frameCount = 7;
-      this.currentFrame = 1;
+  const pacman = reactive({
+    x,
+    y,
+    width,
+    height,
+    speed,
+    direction: 4,
+    nextDirection: 4,
+    frameCount: 7,
+    currentFrame: 1,
+  });
 
-      setInterval(() => this.changeAnimation(), 100);
-    }
+  function moveProcess() {
+    changeDirectionIfPossible();
+    moveForwards();
+    if (checkCollisions()) moveBackwards();
+  }
 
-    moveProcess() {
-      this.changeDirectionIfPossible();
-      this.moveForwards();
-      if (this.checkCollisions()) this.moveBackwards();
-    }
+  function eat() {
+    const mapX = getMapX();
+    const mapY = getMapY();
+    if (map[mapY]?.[mapX] === 2) map[mapY][mapX] = 3;
+  }
 
-    eat() {
-      const [mapX, mapY] = [this.getMapX(), this.getMapY()];
-      if (map[mapY]?.[mapX] === 2) map[mapY][mapX] = 3;
-    }
+  function checkGhostCollision(ghosts) {
+    return ghosts.some(
+      (ghost) => ghost.getMapX() === getMapX() && ghost.getMapY() === getMapY()
+    );
+  }
 
-    checkGhostCollision(ghosts) {
-      return ghosts.some(
-        (ghost) =>
-          ghost.getMapX() === this.getMapX() &&
-          ghost.getMapY() === this.getMapY()
-      );
-    }
+  function moveForwards() {
+    const { x, y } = move(
+      1,
+      pacman.direction,
+      pacman.x,
+      pacman.y,
+      pacman.speed
+    );
+    pacman.x = x;
+    pacman.y = y;
+  }
 
-    moveForwards() {
-      ({ x: this.x, y: this.y } = move(
-        1,
-        this.direction,
-        this.x,
-        this.y,
-        this.speed
-      ));
-    }
+  function moveBackwards() {
+    const { x, y } = move(
+      -1,
+      pacman.direction,
+      pacman.x,
+      pacman.y,
+      pacman.speed
+    );
+    pacman.x = x;
+    pacman.y = y;
+  }
 
-    moveBackwards() {
-      ({ x: this.x, y: this.y } = move(
-        -1,
-        this.direction,
-        this.x,
-        this.y,
-        this.speed
-      ));
-    }
+  function checkCollisions() {
+    return [0, pacman.width - 1].some((dx) =>
+      [0, pacman.height - 1].some(
+        (dy) =>
+          map?.[Math.floor((pacman.y + dy) / oneBlockSize)]?.[
+            Math.floor((pacman.x + dx) / oneBlockSize)
+          ] === 1
+      )
+    );
+  }
 
-    checkCollisions() {
-      const [x, y] = [this.x, this.y];
-      return [0, this.width - 1].some((dx) =>
-        [0, this.height - 1].some(
-          (dy) =>
-            map?.[Math.floor((y + dy) / oneBlockSize)]?.[
-              Math.floor((x + dx) / oneBlockSize)
-            ] === 1
-        )
-      );
-    }
+  function changeDirectionIfPossible() {
+    if (pacman.direction === pacman.nextDirection) return;
 
-    changeDirectionIfPossible() {
-      if (this.direction === this.nextDirection) return;
+    const prevDirection = pacman.direction;
+    pacman.direction = pacman.nextDirection;
+    moveForwards();
 
-      const prevDirection = this.direction;
-      this.direction = this.nextDirection;
-      this.moveForwards();
-
-      if (this.checkCollisions()) {
-        this.moveBackwards();
-        this.direction = prevDirection;
-      } else {
-        this.moveBackwards();
-      }
-    }
-
-    getMapX() {
-      return Math.floor(this.x / oneBlockSize);
-    }
-
-    getMapY() {
-      return Math.floor(this.y / oneBlockSize);
-    }
-
-    changeAnimation() {
-      if (this.frameCount > 1) {
-        this.currentFrame = (this.currentFrame % this.frameCount) + 1;
-      }
-    }
-
-    draw() {
-      const ctx = canvasContext.value;
-      if (!ctx) return;
-
-      ctx.save();
-      const [centerX, centerY] = [
-        this.x + this.width / 2,
-        this.y + this.height / 2,
-      ];
-
-      ctx.translate(centerX, centerY);
-      ctx.rotate((this.direction * Math.PI) / 2);
-      ctx.translate(-centerX, -centerY);
-
-      ctx.drawImage(
-        pacmanFrames.value,
-        (this.currentFrame - 1) * this.width,
-        0,
-        this.width,
-        this.height,
-        this.x,
-        this.y,
-        this.width,
-        this.height
-      );
-
-      ctx.restore();
+    if (checkCollisions()) {
+      moveBackwards();
+      pacman.direction = prevDirection;
+    } else {
+      moveBackwards();
     }
   }
 
-  return new Pacman(x, y, width, height, speed);
+  function getMapX() {
+    return Math.floor(pacman.x / oneBlockSize);
+  }
+
+  function getMapY() {
+    return Math.floor(pacman.y / oneBlockSize);
+  }
+
+  function changeAnimation() {
+    if (pacman.frameCount > 1) {
+      pacman.currentFrame = (pacman.currentFrame % pacman.frameCount) + 1;
+    }
+    requestAnimationFrame(changeAnimation);
+  }
+
+  requestAnimationFrame(changeAnimation);
+
+  function draw() {
+    const ctx = canvasContext.value;
+    if (!ctx) return;
+
+    ctx.save();
+    const centerX = pacman.x + pacman.width / 2;
+    const centerY = pacman.y + pacman.height / 2;
+
+    ctx.translate(centerX, centerY);
+    ctx.rotate((pacman.direction * Math.PI) / 2);
+    ctx.translate(-centerX, -centerY);
+
+    ctx.drawImage(
+      pacmanFrames.value,
+      (pacman.currentFrame - 1) * pacman.width,
+      0,
+      pacman.width,
+      pacman.height,
+      pacman.x,
+      pacman.y,
+      pacman.width,
+      pacman.height
+    );
+
+    ctx.restore();
+  }
+
+  return {
+    pacman,
+    moveProcess,
+    eat,
+    checkGhostCollision,
+    draw,
+  };
 }

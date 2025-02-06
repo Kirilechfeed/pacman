@@ -2,8 +2,7 @@
 import { reactive, ref, onMounted, onBeforeUnmount } from "vue";
 import { createTunnel } from "./composable/createTunel.js";
 import { createPacman } from "./composable/createPacman.js";
-import { createGhost } from "./composable/createGhost.js";
-
+import createGhost from "./composable/createGhost.js";
 import { drawMap } from "./composable/drawMap.js";
 import {
   DIRECTION_RIGHT,
@@ -32,7 +31,7 @@ const canvasContext = ref(null);
 const pacmanFrames = ref(null);
 const ghostFrames = ref(null);
 const totalBits = ref(0);
-const ghostCount = 4;
+const ghostCount = 3;
 const ghosts = ref([]);
 const gameState = reactive({
   map: [],
@@ -43,13 +42,13 @@ const gameState = reactive({
 let animationFrameId;
 
 const initGhosts = () => {
-  for (let i = 0; i < ghostCount * 1; i++) {
-    const newGhost = new createGhost(
-      9 * oneBlockSize + (i % 2 == 0 ? 0 : 1) * oneBlockSize,
-      10 * oneBlockSize + (i % 2 == 0 ? 0 : 1) * oneBlockSize,
+  ghosts.value = Array.from({ length: ghostCount }, (_, i) =>
+    createGhost(
+      9 * oneBlockSize + (i % 2 === 0 ? 0 : 1) * oneBlockSize,
+      10 * oneBlockSize + (i % 2 === 0 ? 0 : 1) * oneBlockSize,
       oneBlockSize,
       oneBlockSize,
-      gameState.pacman.speed / 2,
+      5,
       ghostImageLocations[i % 4].x,
       ghostImageLocations[i % 4].y,
       124,
@@ -61,19 +60,15 @@ const initGhosts = () => {
       gameState.pacman,
       canvasContext,
       ghostFrames
-    );
-
-    ghosts.value.push(newGhost);
-  }
+    )
+  );
 };
-// Инициализация игры
+
 const initGame = () => {
   canvasContext.value = canva.value.getContext("2d");
-
   const tunnelData = createTunnel(23, 21);
   gameState.map = tunnelData.matrix;
   totalBits.value = tunnelData.totalBits;
-
   gameState.pacman = createPacman(
     oneBlockSize,
     oneBlockSize,
@@ -98,8 +93,6 @@ const initGame = () => {
   startGameLoop();
 };
 
-// Цикл игры
-
 const startGameLoop = () => {
   let lastFrameTime = 0;
   const frameDuration = 1000 / fps;
@@ -108,9 +101,7 @@ const startGameLoop = () => {
     if (timestamp - lastFrameTime >= frameDuration) {
       updateGame();
       gameState.draw();
-      for (let i = 0; i < ghosts.value.length; i++) {
-        ghosts.value[i].moveProcess();
-      }
+      ghosts.value.forEach((ghost) => ghost.moveProcess());
       if (gameState.pacman.checkGhostCollision(ghosts.value)) {
         onGhostCollision();
       }
@@ -122,31 +113,27 @@ const startGameLoop = () => {
   animationFrameId = requestAnimationFrame(gameLoop);
 };
 
-// Обновление состояния игры
 const updateGame = () => {
   gameState.pacman.moveProcess();
   gameState.pacman.eat();
 };
 
-// Управление событиями клавиатуры
 const handleKeyDown = (event) => {
   const keyMap = {
     37: DIRECTION_LEFT,
-    65: DIRECTION_LEFT, // A
+    65: DIRECTION_LEFT,
     38: DIRECTION_UP,
-    87: DIRECTION_UP, // W
+    87: DIRECTION_UP,
     39: DIRECTION_RIGHT,
-    68: DIRECTION_RIGHT, // D
+    68: DIRECTION_RIGHT,
     40: DIRECTION_BOTTOM,
-    83: DIRECTION_BOTTOM, // S
+    83: DIRECTION_BOTTOM,
   };
-
   if (keyMap[event.keyCode] !== undefined) {
     gameState.pacman.nextDirection = keyMap[event.keyCode];
   }
 };
 
-// Монтирование и размонтирование
 onMounted(() => {
   initGame();
   window.addEventListener("keydown", handleKeyDown);
